@@ -5,23 +5,86 @@ pipeline {
             steps {
                 echo 'Installing Nginx.....'
                 sh 'sudo apt update -y'
-                sh 'sudo apt install nginx'
-                sh 'nginx --version'
+                sh 'sudo apt install nginx -y'
+                sh 'nginx -v'
             }
         }
-        stage('stop nginx') {
+        stage('Add HTML Page') {
             steps {
-                echo 'stoping Nginx.....'
+                echo 'Adding HTML page.....'
+                writeFile file: 'index.html', text: '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel Booking Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px gray; }
+        h2 { text-align: center; color: #333; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 10px; margin-top: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Hotel Booking Form</h2>
+    <form action="#" method="post">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" required>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required>
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" required>
+        <label for="checkin">Check-In Date</label>
+        <input type="date" id="checkin" name="checkin" required>
+        <label for="checkout">Check-Out Date</label>
+        <input type="date" id="checkout" name="checkout" required>
+        <label for="room">Room Type</label>
+        <select id="room" name="room">
+            <option value="single">Single Room</option>
+            <option value="double">Double Room</option>
+            <option value="suite">Suite</option>
+        </select>
+        <label for="guests">Number of Guests</label>
+        <input type="number" id="guests" name="guests" min="1" max="10" required>
+        <label for="requests">Special Requests</label>
+        <textarea id="requests" name="requests" rows="4"></textarea>
+        <button type="submit">Book Now</button>
+    </form>
+</div>
+</body>
+</html>'''
+                sh 'sudo mv index.html /var/www/html/index.html'
+            }
+        }
+        stage('Stop Nginx') {
+            steps {
+                echo 'Stopping Nginx.....'
                 sh 'sudo systemctl stop nginx'
                 sleep 3
+                sh 'sudo systemctl status nginx || true'
             }
         }
-        stage('start nginx') {
+        stage('Start Nginx') {
             steps {
                 echo 'Starting Nginx.....'
                 sh 'sudo systemctl start nginx'
                 sleep 3
+                sh 'sudo systemctl status nginx'
             }
+        }
+    }
+    post {
+        success {
+            echo 'Nginx installed successfully'
+        }
+        failure {
+            echo 'Nginx installation failed'
+        }
+        always {
+            echo 'Pipeline process completed'
         }
     }
 }

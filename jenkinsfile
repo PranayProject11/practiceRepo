@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+    stages {
+        stage('Install Nginx') {
+            steps {
+                echo 'Installing Nginx.....'
+                sh 'sudo apt update -y'
+                sh 'sudo apt install nginx -y'
+                sh 'nginx -v'
+            }
+        }
+        stage ("clone repository") {
+            steps {
+                echo 'clone repository......'
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/PranayProject11/practiceRepo.git']])
+                sh 'ls -lrt'
+            }
+        }
+        stage('Add HTML Page') {
+            steps {
+                echo 'Adding HTML page.....'
+                sh 'sudo mv index.html /var/www/html/index.html'
+            }
+        }
+        stage('Stop Nginx') {
+            steps {
+                echo 'Stopping Nginx.....'
+                sh 'sudo systemctl stop nginx'
+                sleep 3
+                sh 'sudo systemctl status nginx || true'
+            }
+        }
+        stage('Start Nginx') {
+            steps {
+                echo 'Starting Nginx.....'
+                sh 'sudo systemctl start nginx'
+                sleep 3
+                sh 'sudo systemctl status nginx'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Nginx installed successfully'
+        }
+        failure {
+            echo 'Nginx installation failed'
+        }
+        always {
+            echo 'Pipeline process completed'
+        }
+    }
+}

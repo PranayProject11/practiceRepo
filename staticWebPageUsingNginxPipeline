@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    stages {
+        stage('Install Nginx') {
+            steps {
+                echo 'Installing Nginx.....'
+                sh 'sudo apt update -y'
+                sh 'sudo apt install nginx'
+                sh 'nginx --version'
+            }
+        }
+        stage('stop nginx') {
+            steps {
+                echo 'stoping Nginx.....'
+                sh 'sudo systemctl stop nginx'
+                sleep 3
+            }
+        }
+        stage('start nginx') {
+            steps {
+                echo 'Starting Nginx.....'
+                sh 'sudo systemctl start nginx'
+                sleep 3
+            }
+        }
+    }
+}

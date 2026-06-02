@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+    stages {
+        stage('Clone Code') {
+            steps {
+                git 'https://github.com/company/project.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+        stage('Code Quality') {
+            steps {
+                sh 'mvn sonar:sonar'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker image.....'
+                sh 'docker build -t myapp:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Push to Registry') {
+            steps {
+                echo 'Pushing to DockerHub/ECR.....'
+                sh 'docker push myrepo/myapp:${BUILD_NUMBER}'
+            }
+        }
+        stage('Terraform Init') {
+            steps {
+                echo 'Initializing Terraform.....'
+                sh 'terraform init'
+            }
+        }
+        stage('Terraform Apply') {
+            steps {
+                echo 'Creating infrastructure.....'
+                sh 'terraform apply -auto-approve'
+            }
+        }
+        stage('Deploy to Dev') {
+            steps {
+                echo 'Deploying to Dev.....'
+                sh 'kubectl apply -f k8s/dev-deployment.yaml'
+            }
+        }
+        stage('Deploy to QA') {
+            steps {
+                echo 'Deploying to QA.....'
+                sh 'kubectl apply -f k8s/qa-deployment.yaml'
+            }
+        }
+        stage('Deploy to Staging') {
+            steps {
+                echo 'Deploying to Staging.....'
+                sh 'kubectl apply -f k8s/staging-deployment.yaml'
+            }
+        }
+        stage('Approval') {
+            steps {
+                input message: 'Approve Production Deployment?',
+                      ok: 'Yes, Deploy to Production!'
+            }
+        }
+        stage('Deploy to Production') {
+            steps {
+                echo 'Deploying to Production.....'
+                sh 'kubectl apply -f k8s/prod-deployment.yaml'
+            }
+        }
+    }
+    post {
+        success {
+            echo '✅ Pipeline completed successfully'
+        }
+        failure {
+            echo '❌ Pipeline failed'
+        }
+        always {
+            echo 'Pipeline process completed'
+        }
+    }
+}
+
